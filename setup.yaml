@@ -13,7 +13,7 @@
     - name: Register system
       community.general.redhat_subscription:
         state: present
-        username: kvalin@redhat.com
+        username: "{{ rhsm_uname }}"
         password: "{{ rhsm_passwd }}"
 
     - name: Enable CRB
