@@ -1,0 +1,64 @@
+- name: Install Nvidia Driver
+  hosts: all
+  vars:
+    nvidia_driver_version: latest
+    cuda_version: 12-4
+  gather_facts: true
+  become: true
+  tasks:
+    - name: Allow subscription manager to manage system
+      ansible.builtin.shell:
+        cmd: subscription-manager config --rhsm.manage_repos=1
+
+    - name: Register system
+      community.general.redhat_subscription:
+        state: present
+        username: kvalin@redhat.com
+        password: "{{ rhsm_passwd }}"
+
+    - name: Enable CRB
+      community.general.rhsm_repository:
+        name: codeready-builder-for-rhel-{{ ansible_distribution_major_version }}-{{ ansible_architecture }}-rpms
+        state: present
+
+    - name: Install EPEL and Needed Packages
+      ansible.builtin.dnf:
+        pkg:
+          - https://dl.fedoraproject.org/pub/epel/epel-release-latest-{{ ansible_distribution_major_version }}.noarch.rpm
+          - kernel-devel
+          - kernel-headers
+          - git
+          - git-lfs
+          - podman
+          - https://developer.download.nvidia.com/compute/cuda/12.4.0/local_installers/cuda-repo-rhel9-12-4-local-12.4.0_550.54.14-1.x86_64.rpm
+        state: present
+        disable_gpg_check: true
+
+    - name: Add Nvidia Container Toolkit repo
+      ansible.builtin.yum_repository:
+        baseurl:
+          - https://nvidia.github.io/libnvidia-container/stable/rpm/$basearch
+        name: nvidia-container-toolkit
+        description: Nvidia Container Toolkit
+        enabled: true
+        gpgcheck: false
+        sslverify: true
+        gpgkey:
+          - https://nvidia.github.io/libnvidia-container/gpgkey
+        repo_gpgcheck: true
+
+
+    - name: Install Nvidia Drivers
+      ansible.builtin.dnf:
+        name:
+          - "@nvidia-driver:{{ nvidia_driver_version }}-dkms"
+          - cuda-toolkit-{{ cuda_version }}
+          - nvidia-container-toolkit
+        state: present
+
+    - name: Reboot
+      ansible.builtin.reboot:
+
+    - name: Initialize Nvidia Container Toolkit
+      ansible.builtin.shell:
+        cmd: nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml
