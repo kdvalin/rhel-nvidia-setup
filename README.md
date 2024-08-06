@@ -1,7 +1,6 @@
 # RHEL Nvidia Setup Playbook
 ##  What does it do?
 - Install Nvidia Driver and dependencies
-- Install CUDA
 - Adds EPEL repo
 - Install and Configure Nvidia Container Toolkit for podman
 

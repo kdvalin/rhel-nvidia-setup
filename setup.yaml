@@ -1,15 +1,10 @@
 - name: Install Nvidia Driver
   hosts: all
   vars:
-    nvidia_driver_version: 550.54.15
-    cuda_version: 12.4.1
+    nvidia_driver_version: 550.90.07
   gather_facts: true
   become: true
   tasks:
-    - name: Get truncated CUDA version
-      ansible.builtin.set_fact:
-        short_cuda: '{{ cuda_version.split(".")[:2] | join("-") }}'
-
     - name: Allow subscription manager to manage system
       ansible.builtin.shell:
         cmd: subscription-manager config --rhsm.manage_repos=1
@@ -34,7 +29,7 @@
           - git
           - git-lfs
           - podman
-          - https://developer.download.nvidia.com/compute/cuda/{{ cuda_version }}/local_installers/cuda-repo-rhel{{ ansible_distribution_major_version }}-{{ short_cuda }}-local-{{ cuda_version }}_{{ nvidia_driver_version }}-1.{{ ansible_architecture }}.rpm
+          - https://us.download.nvidia.com/tesla/{{ nvidia_driver_version }}/nvidia-driver-local-repo-rhel{{ ansible_distribution_major_version }}-{{ nvidia_driver_version }}-1.0-1.x86_64.rpm
         state: present
         disable_gpg_check: true
 
@@ -56,7 +51,6 @@
       ansible.builtin.dnf:
         name:
           - "@nvidia-driver:latest-dkms"
-          - cuda-toolkit-{{ short_cuda }}
           - nvidia-container-toolkit
         state: present
 
