@@ -1,24 +1,37 @@
 - name: Install Nvidia Driver
   hosts: all
   vars:
-    nvidia_driver_version: 550.90.07
+    nvidia_driver_version: 550.127.05
+    register_system: false
   gather_facts: true
   become: true
   tasks:
-    - name: Allow subscription manager to manage system
-      ansible.builtin.shell:
-        cmd: subscription-manager config --rhsm.manage_repos=1
+    - name: RHSM Management
+      when: register_system
+      block:
+        - name: Allow subscription manager to manage system
+          ansible.builtin.shell:
+            cmd: subscription-manager config --rhsm.manage_repos=1
 
-    - name: Register system
-      community.general.redhat_subscription:
-        state: present
-        username: "{{ rhsm_uname }}"
-        password: "{{ rhsm_passwd }}"
+        - name: Register system
+          community.general.redhat_subscription:
+            state: present
+            username: "{{ rhsm_uname }}"
+            password: "{{ rhsm_passwd }}"
 
-    - name: Enable CRB
-      community.general.rhsm_repository:
-        name: codeready-builder-for-rhel-{{ ansible_distribution_major_version }}-{{ ansible_architecture }}-rpms
-        state: present
+        - name: Enable CRB
+          community.general.rhsm_repository:
+            name: codeready-builder-for-rhel-{{ ansible_distribution_major_version }}-{{ ansible_architecture }}-rpms
+            state: present
+
+    - name: Update system
+      ansible.builtin.dnf:
+        name: "*"
+        update_only: true
+        state: latest
+
+    - name: Reboot system
+      ansible.builtin.reboot:
 
     - name: Install EPEL and Needed Packages
       ansible.builtin.dnf:
